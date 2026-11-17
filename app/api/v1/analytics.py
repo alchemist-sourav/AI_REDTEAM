@@ -1,6 +1,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.user import User
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
@@ -21,11 +22,12 @@ router = APIRouter(
 )
 async def get_dashboard_analytics(
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     service = AnalyticsService()
 
     try:
-        return await service.generate_dashboard(db)
+        return await service.generate_dashboard(db, current_user=current_user)
 
     except Exception as exc:
         # Log the actual exception in production.

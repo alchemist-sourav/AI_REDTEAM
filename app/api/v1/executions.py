@@ -129,6 +129,30 @@ async def execute_attacks(
     return result
 
 
+# All authenticated users: List all execution results.
+# Admin sees everything; Analyst and Viewer see only their own.
+@router.get(
+    "/",
+    response_model=list[ExecutionResultResponse],
+)
+async def list_executions(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = select(ExecutionResult)
+
+    if current_user.role != "admin":
+        query = query.where(
+            ExecutionResult.created_by_user_id == current_user.id
+        )
+
+    result = await db.execute(
+        query.order_by(ExecutionResult.executed_at.desc())
+    )
+
+    return result.scalars().all()
+
+
 # All authenticated users: View execution batches
 # Admin sees all batches; Analyst and Viewer see only their own.
 @router.get(

@@ -26,6 +26,36 @@ router = APIRouter(
 )
 
 
+# All authenticated users: List all evaluations visible to this user.
+# Admin sees all; Analyst and Viewer see only their own (via execution ownership).
+@router.get(
+    "/",
+    response_model=list[EvaluationResponse],
+)
+async def list_evaluations(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = (
+        select(Evaluation)
+        .join(
+            ExecutionResult,
+            Evaluation.execution_result_id == ExecutionResult.id,
+        )
+    )
+
+    if current_user.role != "admin":
+        query = query.where(
+            ExecutionResult.created_by_user_id == current_user.id
+        )
+
+    result = await db.execute(
+        query.order_by(Evaluation.evaluated_at.desc())
+    )
+
+    return result.scalars().all()
+
+
 # Admin and Analyst: Evaluate an individual execution
 @router.post(
     "/{execution_result_id}",

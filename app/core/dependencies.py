@@ -1,4 +1,3 @@
-
 from typing import Callable
 
 import jwt
@@ -13,6 +12,14 @@ from app.models.user import User
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
+
+# JWT decode options matching security.py for consistent validation
+JWT_DECODE_OPTIONS = {
+    "require": ["sub", "iat", "exp"],
+    "verify_signature": True,
+    "verify_exp": True,
+    "verify_iat": True,
+}
 
 
 async def get_current_user(
@@ -35,6 +42,7 @@ async def get_current_user(
             credentials.credentials,
             settings.jwt_secret_key,
             algorithms=[settings.jwt_algorithm],
+            options=JWT_DECODE_OPTIONS,
         )
 
         subject = payload.get("sub")

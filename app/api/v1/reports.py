@@ -1,6 +1,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.user import User
 
 from app.core.database import get_db
 from app.schemas.report import SecurityReportResponse
@@ -39,6 +40,7 @@ router = APIRouter(
 async def get_security_report(
     batch_id: str,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     service = ReportService()
 
@@ -46,6 +48,7 @@ async def get_security_report(
         report = await service.generate_report(
             batch_id=batch_id,
             db=db,
+            current_user=current_user,
         )
 
         return report
@@ -66,6 +69,7 @@ async def get_security_report(
 async def export_security_report_json(
     batch_id: str,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     service = ReportService()
 
@@ -73,6 +77,7 @@ async def export_security_report_json(
         report = await service.generate_report(
             batch_id=batch_id,
             db=db,
+            current_user=current_user,
         )
 
         json_content = report.model_dump_json(indent=2)
@@ -103,6 +108,7 @@ async def export_security_report_json(
 async def export_security_report_pdf(
     batch_id: str,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     service = ReportService()
 
@@ -110,6 +116,7 @@ async def export_security_report_pdf(
         report = await service.generate_report(
             batch_id=batch_id,
             db=db,
+            current_user=current_user,
         )
 
         buffer = BytesIO()

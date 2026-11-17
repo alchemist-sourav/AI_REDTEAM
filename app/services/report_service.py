@@ -1,12 +1,13 @@
 
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.execution import ExecutionResult
 from app.models.evaluation import Evaluation
 from app.models.attack_test_case import AttackTestCase
+from app.models.user import User
 from app.models.target import Target
 
 from app.schemas.report import (
@@ -25,12 +26,18 @@ class ReportService:
         self,
         batch_id: str,
         db: AsyncSession,
+        current_user: User | None = None,
     ) -> SecurityReportResponse:
 
         # 1. Retrieve executions for the batch
+        # Apply ownership filter for non-admin users
+        filters = [ExecutionResult.batch_id == batch_id]
+        if current_user is not None and current_user.role != "admin":
+            filters.append(ExecutionResult.created_by_user_id == current_user.id)
+
         execution_result = await db.execute(
             select(ExecutionResult).where(
-                ExecutionResult.batch_id == batch_id
+                and_(*filters)
             )
         )
 
